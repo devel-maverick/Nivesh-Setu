@@ -16,7 +16,7 @@ def portfolio_metrics(returns, weights, risk_free_rate=0.0):
     portfolio_volatility = np.sqrt(portfolio_variance)
 
     if portfolio_volatility != 0:
-        sharpe_ratio = (portfolio_return - risk_free_rate) / portfolio_volatility
+        sharpe_ratio = (portfolio_return - risk_free_rate) / portfolio_volatility * np.sqrt(252)
     else:
         sharpe_ratio = 0
     correlation_matrix = returns.corr()

@@ -11,6 +11,6 @@ def run_monte_carlo(mean_returns, cov_matrix, weights, simulations=1000, days=30
         )
         results.append(portfolio_path[-1])
 
-    var_95 = np.percentile(results, 5)
+    var_95 = 1.0 - np.percentile(results, 5) 
 
     return float(var_95)
