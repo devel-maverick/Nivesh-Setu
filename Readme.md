@@ -426,8 +426,8 @@ erDiagram
 
 | Member Name | Role | Responsibilities |
 |-------------|------|------------------|
-| Vinay Sharma | Quant Developer | Risk modeling, Monte Carlo simulation, optimization |
-| Ashvin Tiwari | Backend Engineer | FastAPI development, data processing, ML integration |
+| Vinay Sharma | Backend Engineer | FastAPI development, backend development |
+| Ashvin Tiwari | Quant Developer | Risk modeling, Monte Carlo simulation, optimization, data processing, ML integration |
 | Sumit Kumar | Frontend Developer | React dashboard, Plotly visualizations, UI/UX |
 
 ---
