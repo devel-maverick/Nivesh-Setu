@@ -15,5 +15,3 @@ def get_sentiment_score(ticker):
 
     momentum = (current - avg) / avg if avg != 0 else 0
     return float(np.clip(momentum, -1, 1))
-
-    

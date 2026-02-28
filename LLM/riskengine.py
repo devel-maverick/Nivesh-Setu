@@ -31,11 +31,11 @@ def run_analysis(input_data):
     returns = compute_returns(price_data)
 
     metrics = portfolio_metrics(returns, weights)
-    portfolio_return = metrics["expected_return"]
-    portfolio_vol = metrics["volatility"]
-    sharpe_ratio = metrics["sharpe_ratio"]
+    portfolio_return = metrics["expected_return"]          # annualised %
+    portfolio_vol = metrics["volatility"]                  # annualised %
+    sharpe_ratio = metrics["sharpe_ratio"]                 # annualised
     correlation_matrix = metrics["correlation_matrix"]
-    cov_matrix = metrics["cov_matrix"]
+    cov_matrix = metrics["cov_matrix"]                     # daily cov
 
     portfolio_beta, individual_betas = calculate_portfolio_beta(
         returns, weights, start, end
@@ -50,9 +50,10 @@ def run_analysis(input_data):
     else:
         regime = "Neutral"
 
+    # Monte Carlo works on daily returns — pass daily mean & cov
     var_95 = run_monte_carlo(
-        returns.mean(),
-        cov_matrix,
+        returns.mean(),   # daily mean returns per ticker
+        cov_matrix,       # daily covariance matrix
         weights
     )
 
@@ -83,7 +84,9 @@ def run_analysis(input_data):
         alert_metrics = {
             "volatility": float(portfolio_vol),
             "sharpe_ratio": float(sharpe_ratio),
-            "var_95": float(var_95),
+            # alert_engine thresholds use negative fractions (e.g. -0.05);
+            # var_95 is now a positive loss % from montecarlo, so convert back.
+            "var_95": -float(var_95) / 100.0,
             "max_drawdown": float(metrics.get("max_drawdown", 0)),
         }
         vix_current = crash_prediction.get("vix_current", 20.0)
