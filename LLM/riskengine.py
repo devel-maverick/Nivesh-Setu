@@ -1,5 +1,6 @@
 import sys
 import json
+
 from preprocessing import fetch_price_data, compute_returns
 from sentiment import get_sentiment_score
 from riskmetrics import portfolio_metrics
@@ -9,9 +10,12 @@ from scenario import apply_scenario
 from timeframe import parse_timeframe
 from portfolio_loader import load_portfolio_csv
 
+from volatility_forecast import forecast_volatility
+from crash_predictor import predict_crash_probability
+from alert_engine import generate_alerts
+
 
 def run_analysis(input_data):
-
     if "csv_path" in input_data:
         tickers, weights = load_portfolio_csv(input_data["csv_path"])
     else:
@@ -23,7 +27,6 @@ def run_analysis(input_data):
     else:
         start = input_data["start"]
         end = input_data["end"]
-
     price_data = fetch_price_data(tickers, start, end)
     returns = compute_returns(price_data)
 
@@ -37,7 +40,6 @@ def run_analysis(input_data):
     portfolio_beta, individual_betas = calculate_portfolio_beta(
         returns, weights, start, end
     )
-
     sentiment_score = get_sentiment_score(tickers[0])
     if sentiment_score > 0.3:
         portfolio_vol *= 1.2
@@ -62,6 +64,42 @@ def run_analysis(input_data):
             input_data["shock"]
         )
 
+    try:
+        vol_forecast = forecast_volatility(returns, weights)
+    except Exception as exc:
+        print(f"[riskengine] vol forecast failed: {exc}", file=sys.stderr)
+        vol_forecast = {"error": str(exc)}
+
+    try:
+        crash_prediction = predict_crash_probability(
+            returns, weights, start, end,
+            sentiment_score=sentiment_score,
+        )
+    except Exception as exc:
+        print(f"[riskengine] crash predictor failed: {exc}", file=sys.stderr)
+        crash_prediction = {"error": str(exc)}
+
+    try:
+        alert_metrics = {
+            "volatility": float(portfolio_vol),
+            "sharpe_ratio": float(sharpe_ratio),
+            "var_95": float(var_95),
+            "max_drawdown": float(metrics.get("max_drawdown", 0)),
+        }
+        vix_current = crash_prediction.get("vix_current", 20.0)
+
+        risk_alerts = generate_alerts(
+            metrics=alert_metrics,
+            returns=returns,
+            weights=weights,
+            sentiment_score=sentiment_score,
+            vix_current=vix_current,
+            correlation_matrix=correlation_matrix,
+        )
+    except Exception as exc:
+        print(f"[riskengine] alert engine failed: {exc}", file=sys.stderr)
+        risk_alerts = [{"error": str(exc)}]
+
     return {
         "expected_return": float(portfolio_return),
         "volatility": float(portfolio_vol),
@@ -69,10 +107,17 @@ def run_analysis(input_data):
         "correlation_matrix": correlation_matrix.to_dict(),
         "portfolio_beta": float(portfolio_beta),
         "individual_betas": individual_betas,
+        "var_95": float(var_95),
+        "scenario_result": scenario_result,
+
         "sentiment_score": float(sentiment_score),
         "regime": regime,
-        "var_95": float(var_95),
-        "scenario_result": scenario_result
+
+        "ml_intelligence": {
+            "volatility_forecast": vol_forecast,
+            "crash_prediction": crash_prediction,
+            "risk_alerts": risk_alerts,
+        },
     }
 
 
