@@ -18,7 +18,7 @@ Unlike commercial tools that cost thousands per month, Nivesh-Setu is open, tran
 |---|---|
 | **Users** | Retail investors, finance students, quant hobbyists |
 | **Asset Class** | US equities (via Yahoo Finance), extensible to crypto/ETF |
-| **Data Sources** | yfinance, VIX, Reddit (PRAW), Google Trends, News API |
+| **Data Sources** | yfinance, VIX, Google Trends, News API |
 | **Platform** | Web (React frontend + FastAPI backend) |
 | **Intelligence** | Rule-based risk alerts + ML volatility forecasting |
 | **Scale** | Hackathon MVP → production-ready extension |
@@ -49,7 +49,6 @@ Non-traditional signals that institutional "quants with terminals" already use �
 
 | Signal | Source | Insight |
 |---|---|---|
-| **Reddit Sentiment** | PRAW → r/wallstreetbets | Bullish / Bearish score per ticker via VADER NLP |
 | **VIX Fear Meter** | yfinance `^VIX` | Market fear gauge; correlated with your portfolio VaR |
 | **Google Trends** | pytrends | Search interest over time → "Hype vs Risk" visualization |
 | **News Sentiment** | NewsAPI / RSS | Headline-level positive/negative scoring |
@@ -80,7 +79,6 @@ Data-driven models that predict future risk, not just measure past risk.
 - Risk Contribution pie chart per ticker
 
 ### Alternative Data Panel
-- **Reddit Sentiment**: Live VADER scores per ticker with Bullish/Bearish badge
 - **VIX Fear Meter**: Speedometer-style gauge (0–80) with historical overlay
 - **Hype vs Risk Chart**: Google Trends interest vs portfolio VaR over time
 - **News Feed**: Top 5 relevant headlines with sentiment color-coding
@@ -106,7 +104,6 @@ User Input (Tickers + Weights)
          ▼
   FastAPI Backend
   ├── yfinance → Price history + VIX
-  ├── PRAW → Reddit posts (r/wsb)
   ├── pytrends → Google Trends data
   └── NewsAPI → Headlines
          │
@@ -132,7 +129,7 @@ User Input (Tickers + Weights)
 ## Why This Wins a Hackathon
 
 1. **Depth** — 3 distinct intelligence layers vs. typical single-metric calculators
-2. **Alt Data** — Reddit + Google Trends + VIX is genuinely novel for retail tools
+2. **Alt Data** — Google Trends + VIX is genuinely novel for retail tools
 3. **ML** — Crash probability predictor adds predictive power, not just descriptive stats
 4. **UX** — Interactive Plotly charts make complex concepts visual and intuitive
 5. **Real Data** — All APIs are free/public; live demo is always impressive
@@ -146,10 +143,66 @@ User Input (Tickers + Weights)
 Frontend      →  React.js + Plotly.js + Axios
 Backend       →  Python 3.11, FastAPI, Uvicorn
 Risk Engine   →  NumPy, Pandas, SciPy, sklearn
-Alt Data      →  yfinance, PRAW, pytrends, NewsAPI
+Alt Data      →  yfinance, pytrends, NewsAPI
 NLP           →  VADER (vaderSentiment)
 ML Models     →  scikit-learn (RandomForest, GradientBoosting)
 Deployment    →  Railway (backend) + Vercel (frontend)
+```
+
+---
+
+## Project Structure
+
+```
+Nivesh-Setu/
+├── backend/
+│   ├── main.py                  # FastAPI app entry point + all API endpoints
+│   ├── data_fetcher.py          # yfinance data layer — price history, VIX, S&P 500
+│   │
+│   ├── core/                    # Layer 1 — Core Risk Metrics
+│   │   ├── metrics.py           # VaR (Historical, Parametric), CVaR, Sharpe, Sortino, Beta, MDD
+│   │   ├── monte_carlo.py       # Monte Carlo simulation (10,000 paths × 252 days)
+│   │   ├── optimization.py      # Efficient Frontier + Markowitz weight optimizer
+│   │   ├── scenario.py          # Scenario / stress-test analysis (shock sliders)
+│   │   └── correlation.py       # Covariance matrix + correlation heatmap data
+│   │
+│   ├── alt_data/                # Layer 2 — Alternative Data Intelligence
+│   │   ├── vix_fetcher.py       # VIX fear index via yfinance (^VIX)
+│   │   ├── google_trends.py     # pytrends → hype vs risk visualization data
+│   │   └── news_sentiment.py    # NewsAPI / RSS headline sentiment scoring
+│   │
+│   ├── ml/                      # Layer 3 — ML Intelligence
+│   │   ├── volatility_model.py  # RandomForest volatility forecaster (5/10/30-day)
+│   │   ├── crash_predictor.py   # GradientBoosting crash probability model
+│   │   └── alert_engine.py      # Rule-based + ML anomaly detection alerts
+│   │
+│   ├── models.py                # Pydantic request / response schemas
+│   ├── requirements.txt         # Python dependencies
+│   └── tests/
+│       └── test_api.py          # API endpoint tests
+│
+├── frontend/
+│   ├── package.json
+│   ├── public/
+│   │   └── index.html
+│   └── src/
+│       ├── App.jsx              # Root application + routing
+│       ├── api.js               # Axios API client
+│       ├── components/
+│       │   ├── PortfolioInput.jsx      # Ticker + weight input form
+│       │   ├── RiskDashboard.jsx       # KPI cards (VaR, Sharpe, Beta, MDD)
+│       │   ├── MonteCarloChart.jsx     # Animated simulation chart (Plotly)
+│       │   ├── CorrelationHeatmap.jsx  # Pairwise correlation matrix
+│       │   ├── EfficientFrontier.jsx   # Frontier scatter + optimal point
+│       │   ├── AltDataPanel.jsx        # VIX, Trends, News panel
+│       │   ├── MLInsights.jsx          # Volatility forecast + crash badge
+│       │   └── ScenarioSlider.jsx      # What-if shock analysis
+│       └── styles/
+│           └── main.css         # Dark-theme CSS
+│
+├── idea.md                      # Project concept and architecture overview
+├── Readme.md                    # Full hackathon submission document
+└── checkpoints.md               # Development progress tracking
 ```
 
 ---

@@ -90,8 +90,15 @@ Convert historical stock data and alternative signals into actionable risk insig
 ## 4. System Architecture
 
 ### High-Level Flow
-```
-User → React Frontend → FastAPI Backend → Risk Models + ML Models → External APIs → Response → Interactive Dashboard
+
+```mermaid
+flowchart LR
+    A[User] --> B[React Frontend]
+    B --> C[FastAPI Backend]
+    C --> D[Risk Models & ML Models]
+    D --> E[External APIs]
+    E --> F[JSON Response]
+    F --> G[Interactive Dashboard]
 ```
 
 ### Architecture Description
@@ -106,41 +113,31 @@ User → React Frontend → FastAPI Backend → Risk Models + ML Models → Exte
 
 ### Architecture Diagram
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                    NIVESH-SETU PLATFORM                          │
-│                                                                  │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────┐  │
-│  │   Layer 1   │    │   Layer 2   │    │      Layer 3        │  │
-│  │ CORE RISK   │    │   ALT DATA  │    │  ML INTELLIGENCE    │  │
-│  │  METRICS    │    │             │    │                     │  │
-│  │             │    │ Reddit WSB  │    │ Volatility Forecast │  │
-│  │ Historical  │    │ Sentiment   │    │ (RandomForest)      │  │
-│  │ VaR (95%)   │    │             │    │                     │  │
-│  │             │    │ VIX Fear    │    │ Crash Probability   │  │
-│  │ Parametric  │    │ Meter       │    │ Predictor (GBM)     │  │
-│  │ VaR         │    │             │    │                     │  │
-│  │             │    │ Google      │    │ Smart Risk          │  │
-│  │ CVaR /      │    │ Trends Hype │    │ Alerts Engine       │  │
-│  │ Exp.Shortf. │    │ Index       │    │                     │  │
-│  │             │    │             │    │                     │  │
-│  │ Monte Carlo │    │ News        │    │                     │  │
-│  │ Simulation  │    │ Sentiment   │    │                     │  │
-│  │ (10k paths) │    │             │    │                     │  │
-│  │             │    │             │    │                     │  │
-│  │ Sharpe +    │    │             │    │                     │  │
-│  │ Sortino     │    │             │    │                     │  │
-│  │             │    │             │    │                     │  │
-│  │ Max Drawdown│    │             │    │                     │  │
-│  │             │    │             │    │                     │  │
-│  │ Efficient   │    │             │    │                     │  │
-│  │ Frontier +  │    │             │    │                     │  │
-│  │ Markowitz   │    │             │    │                     │  │
-│  │             │    │             │    │                     │  │
-│  │ Risk        │    │             │    │                     │  │
-│  │ Contribution│    │             │    │                     │  │
-│  └─────────────┘    └─────────────┘    └─────────────────────┘  │
-└──────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph PLATFORM["NIVESH-SETU PLATFORM"]
+        subgraph L1["Layer 1 — Core Risk Metrics"]
+            L1A[Historical VaR 95%]
+            L1B[Parametric VaR]
+            L1C[CVaR / Exp. Shortfall]
+            L1D[Monte Carlo 10k paths]
+            L1E[Sharpe + Sortino]
+            L1F[Max Drawdown]
+            L1G[Efficient Frontier + Markowitz]
+            L1H[Risk Contribution]
+        end
+        subgraph L2["Layer 2 — Alt Data"]
+            L2A[Reddit WSB Sentiment]
+            L2B[VIX Fear Meter]
+            L2C[Google Trends Hype Index]
+            L2D[News Sentiment]
+        end
+        subgraph L3["Layer 3 — ML Intelligence"]
+            L3A[Volatility Forecast - RandomForest]
+            L3B[Crash Probability - GBM]
+            L3C[Smart Risk Alerts Engine]
+        end
+    end
 ```
 
 ---
@@ -148,41 +145,42 @@ User → React Frontend → FastAPI Backend → Risk Models + ML Models → Exte
 ## 5. Database Design
 
 ### ER Diagram
-```
-┌─────────────────┐       ┌─────────────────┐
-│    Portfolio    │       │      Asset      │
-├─────────────────┤       ├─────────────────┤
-│ portfolio_id PK │──┐    │ ticker PK       │
-│ user_id FK      │  │    │ name            │
-│ created_at      │  │    │ sector          │
-│ name            │  │    │ industry        │
-└─────────────────┘  │    └─────────────────┘
-                     │              │
-                     │              │
-                     ▼              ▼
-            ┌─────────────────────────┐
-            │   Portfolio_Holding     │
-            ├─────────────────────────┤
-            │ portfolio_id PK FK      │
-            │ ticker PK FK            │
-            │ weight                  │
-            │ shares                  │
-            └─────────────────────────┘
-                           │
-                           ▼
-            ┌─────────────────────────┐
-            │   Computed_Metrics      │
-            ├─────────────────────────┤
-            │ metric_id PK            │
-            │ portfolio_id FK         │
-            │ var_95                  │
-            │ cvar_95                 │
-            │ sharpe_ratio            │
-            │ sortino_ratio           │
-            │ beta                    │
-            │ max_drawdown            │
-            │ computed_at             │
-            └─────────────────────────┘
+
+```mermaid
+erDiagram
+    Portfolio {
+        int portfolio_id PK
+        int user_id FK
+        string name
+        datetime created_at
+    }
+    Asset {
+        string ticker PK
+        string name
+        string sector
+        string industry
+    }
+    Portfolio_Holding {
+        int portfolio_id PK_FK
+        string ticker PK_FK
+        float weight
+        float shares
+    }
+    Computed_Metrics {
+        int metric_id PK
+        int portfolio_id FK
+        float var_95
+        float cvar_95
+        float sharpe_ratio
+        float sortino_ratio
+        float beta
+        float max_drawdown
+        datetime computed_at
+    }
+
+    Portfolio ||--o{ Portfolio_Holding : "contains"
+    Asset ||--o{ Portfolio_Holding : "held in"
+    Portfolio_Holding ||--|| Computed_Metrics : "generates"
 ```
 
 ### ER Diagram Description
@@ -327,51 +325,51 @@ User → React Frontend → FastAPI Backend → Risk Models + ML Models → Exte
 **Deliverables:**
 - [x] Risk model selection
 - [x] Mathematical validation of formulas
-- [x] UI wireframe design
-- [x] Architecture diagram
+- [ ] UI wireframe design
+- [ ] Architecture diagram
 
 ### Checkpoint 2: Backend Development
 **Deliverables:**
-- [x] Data fetching engine (yfinance)
-- [x] Return computation module
-- [x] Covariance matrix calculation
-- [x] VaR implementation (Historical + Parametric)
-- [x] CVaR implementation
-- [x] Sharpe & Sortino ratio
-- [x] Beta calculation
-- [x] Max Drawdown
-- [x] Risk Contribution per asset
+- [ ] Data fetching engine (yfinance)
+- [ ] Return computation module
+- [ ] Covariance matrix calculation
+- [ ] VaR implementation (Historical + Parametric)
+- [ ] CVaR implementation
+- [ ] Sharpe & Sortino ratio
+- [ ] Beta calculation
+- [ ] Max Drawdown
+- [ ] Risk Contribution per asset
 
 ### Checkpoint 3: Frontend Development
 **Deliverables:**
-- [x] React dashboard setup
-- [x] Portfolio input UI
-- [x] Metric cards visualization
-- [x] Monte Carlo chart (Plotly)
-- [x] Correlation heatmap
-- [x] Scenario slider
+- [ ] React dashboard setup
+- [ ] Portfolio input UI
+- [ ] Metric cards visualization
+- [ ] Monte Carlo chart (Plotly)
+- [ ] Correlation heatmap
+- [ ] Scenario slider
 - [ ] Efficient Frontier chart
 - [ ] VIX Fear Meter gauge
 - [ ] Sentiment panel
 
 ### Checkpoint 4: Model Training
 **Deliverables:**
-- [x] Monte Carlo simulation engine
-- [x] Markowitz optimization
+- [ ] Monte Carlo simulation engine
+- [ ] Markowitz optimization
 - [ ] RandomForest volatility forecaster
 - [ ] GradientBoosting crash predictor
 
 ### Checkpoint 5: Model Integration
 **Deliverables:**
-- [x] Monte Carlo API endpoint
-- [x] Optimization API endpoint
+- [ ] Monte Carlo API endpoint
+- [ ] Optimization API endpoint
 - [ ] ML forecast endpoint
 - [ ] Alert engine
 
 ### Checkpoint 6: Deployment
 **Deliverables:**
-- [x] Local development setup
-- [x] Docker configuration
+- [ ] Local development setup
+- [ ] Docker configuration
 - [ ] Cloud deployment
 - [ ] Documentation completion
 
@@ -415,13 +413,13 @@ User → React Frontend → FastAPI Backend → Risk Models + ML Models → Exte
 
 | Deliverable | Status |
 |-------------|--------|
-| Functional risk analytics dashboard | Complete |
-| Monte Carlo simulation engine | Complete |
-| Portfolio optimization module | Complete |
-| Interactive visualization interface | Complete |
-| Alternative data integration (Reddit, VIX, Trends) | In Progress |
-| ML volatility forecasting | In Progress |
-| Smart risk alerts | Planned |
+| Functional risk analytics dashboard | In Progress |
+| Monte Carlo simulation engine | In Progress |
+| Portfolio optimization module | Pending |
+| Interactive visualization interface | In Progress |
+| Alternative data integration (Reddit, VIX, Trends) | Pending |
+| ML volatility forecasting | Pending |
+| Smart risk alerts | Pending |
 
 ---
 
