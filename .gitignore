@@ -1,23 +1,42 @@
-
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-venv/
-.env
-.venv
-env/
 *.so
+venv/
+.venv/
+env/
 
+# Node & Frontend
+node_modules/
+dist/
+dist-ssr/
+coverage/
+.eslintcache
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
+# IDEs and Editors
 .vscode/
 .idea/
 *.swp
 *.swo
 
+# Logs
 logs/
 *.log
 
-node_modules/
+# Project specific
 project.md
