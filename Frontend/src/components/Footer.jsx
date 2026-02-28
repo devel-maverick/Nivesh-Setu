@@ -60,7 +60,7 @@ export default function Footer() {
 
         <div className="border-t border-white/[0.03] mt-12 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-text-muted text-sm">
-            © {new Date().getFullYear()} Nivesh-Setu. Built with ❤️ for retail investors.
+            © {new Date().getFullYear()} Nivesh-Setu.
           </p>
           <p className="text-text-muted text-xs">
             Not financial advice. For educational and research purposes only.
