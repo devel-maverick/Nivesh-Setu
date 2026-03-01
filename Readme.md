@@ -458,7 +458,7 @@ erDiagram
 |----------|------|
 | **Live Demo (Frontend)** | https://nivesh-setu.vercel.app |
 | **Backend API** | https://nivesh-setu-1.onrender.com |
-| **DEMO VIDEO and PPT ** | https://drive.google.com/drive/folders/1uChVMouCiVRi64vxgU9RRzARLcARDnsK?usp=sharing |
+| **DEMO VIDEO and PPT** | https://drive.google.com/drive/folders/1uChVMouCiVRi64vxgU9RRzARLcARDnsK?usp=sharing |
 
 
 ---
