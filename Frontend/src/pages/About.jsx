@@ -179,7 +179,7 @@ export default function About() {
             </motion.div>
           </div>
 
-          <p className="text-text-muted text-sm mb-6 uppercase tracking-wider font-semibold">Powered By</p>
+
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}

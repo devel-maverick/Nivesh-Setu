@@ -3,7 +3,7 @@ import pandas as pd
 
 def fetch_price_data(tickers, start, end):
 
-    data = yf.download(tickers, start=start, end=end)
+    data = yf.download(tickers, start=start, end=end, progress=False)
     if len(tickers) == 1:
         if "Adj Close" in data.columns:
             data = data["Adj Close"]

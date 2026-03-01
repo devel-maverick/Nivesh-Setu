@@ -40,7 +40,12 @@ def run_analysis(input_data):
     portfolio_beta, individual_betas = calculate_portfolio_beta(
         returns, weights, start, end
     )
-    sentiment_score = get_sentiment_score(tickers[0])
+    try:
+        sentiment_score = get_sentiment_score(tickers[0])
+    except Exception as exc:
+        print(f"[riskengine] sentiment analysis failed: {exc}", file=sys.stderr)
+        sentiment_score = 0.0
+
     if sentiment_score > 0.3:
         portfolio_vol *= 1.2
         regime = "Excitement"
