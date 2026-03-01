@@ -22,7 +22,7 @@ def calculate_stock_beta(stock_returns, market_returns):
 
 
 def calculate_portfolio_beta(returns, weights, start, end):
-    market_data = yf.download("^GSPC", start=start, end=end)["Close"]
+    market_data = yf.download("^GSPC", start=start, end=end, progress=False)["Close"]
     market_data = market_data.squeeze()
     market_returns = market_data.pct_change().dropna()
     weights = np.array(weights)

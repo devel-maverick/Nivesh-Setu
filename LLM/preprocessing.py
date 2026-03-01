@@ -5,6 +5,7 @@ import pandas as pd
 def fetch_price_data(tickers, start, end):
     data = yf.download(tickers, start=start, end=end, progress=False)
 
+    data = yf.download(tickers, start=start, end=end, progress=False)
     if len(tickers) == 1:
         if "Adj Close" in data.columns:
             price_data = data[["Adj Close"]].rename(columns={"Adj Close": tickers[0]})
