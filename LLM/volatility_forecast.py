@@ -90,6 +90,7 @@ def forecast_volatility(returns: pd.DataFrame, weights: list) -> dict:
 
         results = {}
         all_importances = {}
+        used_historical = False
 
         for horizon in [5, 10, 30]:
             labels = _build_labels(port_returns, horizon)
@@ -101,16 +102,24 @@ def forecast_volatility(returns: pd.DataFrame, weights: list) -> dict:
                 if imp:
                     all_importances[key] = imp
             else:
-                hist_vol = float(port_returns.rolling(horizon).std().iloc[-1] * np.sqrt(252))
+                rolling_std = port_returns.rolling(horizon).std()
+                last_val = rolling_std.iloc[-1] if len(rolling_std) > 0 else np.nan
+                if np.isnan(last_val):
+                    # Not enough data even for rolling window — use full-sample std
+                    last_val = port_returns.std() if len(port_returns) > 1 else 0.0
+                hist_vol = float(last_val * np.sqrt(252))
                 results[key] = round(hist_vol, 6)
+                used_historical = True
 
         n_rows = len(port_returns.dropna())
-        if n_rows >= 252:
+        if n_rows >= 252 and not used_historical:
             confidence = "high"
         elif n_rows >= 120:
             confidence = "medium"
         else:
             confidence = "low"
+        if used_historical:
+            confidence = "historical"
 
         results["confidence"] = confidence
         results["feature_importance"] = all_importances if all_importances else "insufficient_data"
@@ -119,11 +128,11 @@ def forecast_volatility(returns: pd.DataFrame, weights: list) -> dict:
 
     except Exception as exc:
         print(f"[volatility_forecast] Error: {exc}", file=sys.stderr)
-        fallback_vol = float(returns.mean(axis=1).std() * np.sqrt(252))
         return {
-            "vol_5d": round(fallback_vol, 6),
-            "vol_10d": round(fallback_vol, 6),
-            "vol_30d": round(fallback_vol, 6),
-            "confidence": "fallback",
+            "vol_5d": None,
+            "vol_10d": None,
+            "vol_30d": None,
+            "confidence": "error",
             "feature_importance": "error",
+            "error": str(exc),
         }

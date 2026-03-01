@@ -14,8 +14,18 @@ function EmptyState() {
   )
 }
 
-function CrashGauge({ probability = 0 }) {
-  const pct = Math.min(Math.max(Math.round(probability * 100), 0), 100)
+function CrashGauge({ probability = 0, unavailable = false }) {
+  if (unavailable || probability == null) {
+    return (
+      <div className="py-6 text-center">
+        <div className="font-heading text-2xl font-bold text-text-muted">—</div>
+        <div className="text-text-muted text-xs mt-1">Unavailable</div>
+      </div>
+    )
+  }
+  const p = Number(probability)
+  const asDecimal = p > 1 ? p / 100 : p
+  const pct = Math.min(Math.max(Math.round(asDecimal * 100), 0), 100)
 
   const getColor = () => {
     if (pct >= 70) return '#EF4444'
@@ -158,7 +168,16 @@ export default function MLInsights() {
             <Brain size={18} className="text-zinc-400" />
             Crash Predictor (ML)
           </h3>
-          <CrashGauge probability={crashPrediction?.crash_probability || 0} />
+          <CrashGauge
+            probability={crashPrediction?.crash_probability}
+            unavailable={crashPrediction?.method === 'insufficient_data' || crashPrediction?.method === 'error' || crashPrediction?.error}
+          />
+          {crashPrediction?.method === 'insufficient_data' && crashPrediction?.message && (
+            <p className="text-text-muted text-xs mt-1">{crashPrediction.message}</p>
+          )}
+          {crashPrediction?.error && (
+            <p className="text-text-muted text-xs mt-1">Crash predictor unavailable</p>
+          )}
           <div className="mt-4 text-xs text-text-muted text-center max-w-xs">
             Gradient Boosting model trained on VIX, sentiment, volatility, and drawdown features. Probability of &gt;5% drawdown in next 30 days.
           </div>
@@ -189,21 +208,30 @@ export default function MLInsights() {
               <span>😐 Neutral</span>
               <span>🐂 Excitement</span>
             </div>
-            <div className="h-3 bg-zinc-900 rounded-full overflow-hidden border border-border-default">
-              <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{
-                  width: `${50 + (sentiment_score || 0) * 50}%`,
-                  background: sentiment_score > 0.3 ? 'linear-gradient(90deg, #10B981, #F59E0B)' :
-                    sentiment_score < -0.3 ? 'linear-gradient(90deg, #F59E0B, #EF4444)' :
-                    'linear-gradient(90deg, #10B981, #34D399)',
-                }}
-              />
-            </div>
-            <div className="text-center text-sm font-mono font-bold text-text-primary mt-2">
-              {((sentiment_score || 0) > 0 ? '+' : '')}{((sentiment_score || 0) * 100).toFixed(0)}%
-            </div>
-            <p className="text-text-muted text-xs text-center">Google Trends momentum score</p>
+            {results.sentiment_available === false ? (
+              <div className="py-4 text-center">
+                <div className="text-text-muted text-sm font-mono">—</div>
+                <p className="text-text-muted text-xs mt-1">Sentiment data unavailable</p>
+              </div>
+            ) : (
+              <>
+                <div className="h-3 bg-zinc-900 rounded-full overflow-hidden border border-border-default">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${50 + (sentiment_score || 0) * 50}%`,
+                      background: sentiment_score > 0.3 ? 'linear-gradient(90deg, #10B981, #F59E0B)' :
+                        sentiment_score < -0.3 ? 'linear-gradient(90deg, #F59E0B, #EF4444)' :
+                        'linear-gradient(90deg, #10B981, #34D399)',
+                    }}
+                  />
+                </div>
+                <div className="text-center text-sm font-mono font-bold text-text-primary mt-2">
+                  {((sentiment_score || 0) > 0 ? '+' : '')}{((sentiment_score || 0) * 100).toFixed(0)}%
+                </div>
+                <p className="text-text-muted text-xs text-center">Google Trends momentum score</p>
+              </>
+            )}
           </div>
 
           {/* Regime badge */}
@@ -222,20 +250,30 @@ export default function MLInsights() {
             VIX Fear Meter
           </h3>
           <div className="text-center py-4">
-            <div className={`font-heading text-5xl font-bold mb-2 ${
-              (crashPrediction?.vix_current || 20) > 35 ? 'text-accent-red' :
-              (crashPrediction?.vix_current || 20) > 25 ? 'text-accent-amber' : 'text-accent-green'
-            }`}>
-              {(crashPrediction?.vix_current || 20).toFixed(1)}
-            </div>
-            <div className="text-text-muted text-sm">VIX Index</div>
-            <div className={`badge mt-3 ${
-              (crashPrediction?.vix_current || 20) > 35 ? 'badge-red' :
-              (crashPrediction?.vix_current || 20) > 25 ? 'badge-amber' : 'badge-green'
-            }`}>
-              {(crashPrediction?.vix_current || 20) > 35 ? 'High Fear' :
-               (crashPrediction?.vix_current || 20) > 25 ? 'Elevated' : 'Calm'}
-            </div>
+            {crashPrediction?.vix_current != null ? (
+              <>
+                <div className={`font-heading text-5xl font-bold mb-2 ${
+                  crashPrediction.vix_current > 35 ? 'text-accent-red' :
+                  crashPrediction.vix_current > 25 ? 'text-accent-amber' : 'text-accent-green'
+                }`}>
+                  {crashPrediction.vix_current.toFixed(1)}
+                </div>
+                <div className="text-text-muted text-sm">VIX Index</div>
+                <div className={`badge mt-3 ${
+                  crashPrediction.vix_current > 35 ? 'badge-red' :
+                  crashPrediction.vix_current > 25 ? 'badge-amber' : 'badge-green'
+                }`}>
+                  {crashPrediction.vix_current > 35 ? 'High Fear' :
+                   crashPrediction.vix_current > 25 ? 'Elevated' : 'Calm'}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="font-heading text-5xl font-bold mb-2 text-text-muted">—</div>
+                <div className="text-text-muted text-sm">VIX Index</div>
+                <div className="badge mt-3 badge-amber">Unavailable</div>
+              </>
+            )}
           </div>
           <div className="text-text-muted text-xs mt-3 text-center">
             VIX &lt;20: calm · 20–30: elevated · &gt;30: high fear · &gt;40: extreme panic

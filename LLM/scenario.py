@@ -19,6 +19,7 @@ def apply_scenario(returns, weights, shock_dict):
         if ticker in modified_returns.columns:
             modified_returns[ticker] += shock
 
-    portfolio_return = np.dot(modified_returns.mean(), weights)
+    portfolio_return_daily = np.dot(modified_returns.mean(), weights)
+    portfolio_return_annual = portfolio_return_daily * 252  # annualise for consistency
 
-    return float(portfolio_return)
+    return float(portfolio_return_annual)

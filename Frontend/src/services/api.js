@@ -31,9 +31,13 @@ api.interceptors.response.use(
  * @param {string} [params.timeframe] - '1M' | '3M' | '6M' | '1Y' | '5Y'
  * @param {Object} [params.shock] - { AAPL: -0.2 } for scenario analysis
  */
-export const analyzePortfolio = ({ tickers, weights, timeframe = '1Y', shock = null }) => {
+export const analyzePortfolio = (params = {}) => {
+  const { tickers, weights, timeframe = '1Y', shock = null } = params
+  if (!tickers?.length || !weights?.length) {
+    return Promise.reject(new Error('Portfolio must include tickers and weights'))
+  }
   const payload = { tickers, weights, timeframe }
-  if (shock) payload.shock = shock
+  if (shock && typeof shock === 'object' && Object.keys(shock).length > 0) payload.shock = shock
   return api.post('/analyze', payload)
 }
 

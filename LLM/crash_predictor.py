@@ -1,4 +1,5 @@
 import sys
+import time
 import warnings
 import numpy as np
 import pandas as pd
@@ -7,20 +8,34 @@ from sklearn.ensemble import GradientBoostingClassifier
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-DRAWDOWN_THRESHOLD = -0.05   
-FORWARD_WINDOW     = 30      
+DRAWDOWN_THRESHOLD = -0.05
+FORWARD_WINDOW     = 30
 VIX_TICKER         = "^VIX"
+VIX_FETCH_RETRIES  = 3
+VIX_RETRY_DELAY    = 1.5
+
 
 def _fetch_vix(start: str, end: str) -> pd.Series:
-    try:
-        vix = yf.download(VIX_TICKER, start=start, end=end, progress=False)
-        if "Close" in vix.columns:
-            return vix["Close"].squeeze()
-        elif "Adj Close" in vix.columns:
-            return vix["Adj Close"].squeeze()
-        return pd.Series(dtype=float)
-    except Exception:
-        return pd.Series(dtype=float)
+    for attempt in range(VIX_FETCH_RETRIES):
+        try:
+            vix = yf.download(VIX_TICKER, start=start, end=end, progress=False)
+            if vix is None or vix.empty:
+                raise ValueError("Empty VIX response")
+            if "Close" in vix.columns:
+                out = vix["Close"].squeeze()
+            elif "Adj Close" in vix.columns:
+                out = vix["Adj Close"].squeeze()
+            else:
+                out = pd.Series(dtype=float)
+            if out.empty or len(out.dropna()) < 2:
+                raise ValueError("Insufficient VIX data")
+            return out
+        except Exception:
+            if attempt < VIX_FETCH_RETRIES - 1:
+                time.sleep(VIX_RETRY_DELAY)
+            else:
+                return pd.Series(dtype=float)
+    return pd.Series(dtype=float)
 
 
 def _compute_rolling_drawdown(returns: pd.Series, window: int = 60) -> pd.Series:
@@ -97,26 +112,53 @@ def predict_crash_probability(
         mask = features.notna().all(axis=1) & labels.notna()
         X = features.loc[mask]
         y = labels.loc[mask]
-        vix_current = float(vix_series.iloc[-1]) if not vix_series.empty else 20.0
+        vix_available = not vix_series.empty
+        vix_current = float(vix_series.iloc[-1]) if vix_available else None
+
         if len(X) < 100 or y.sum() < 5:
-            return _heuristic_fallback(port_returns, vix_current, sentiment_score)
+            return {
+                "crash_probability": None,
+                "risk_level": None,
+                "contributing_factors": [],
+                "vix_current": round(vix_current, 2) if vix_current is not None else None,
+                "vix_available": vix_available,
+                "method": "insufficient_data",
+                "message": "Need at least 1Y history and 5 crash events for ML estimate.",
+            }
+
+        # --- Time-series aware train/test split ---
+        # Use all data except the last FORWARD_WINDOW rows for training;
+        # predict on the very last available feature row.
+        # This avoids training on the same window we're predicting for.
+        split_idx = max(int(len(X) * 0.8), len(X) - FORWARD_WINDOW)
+        X_train, y_train = X.iloc[:split_idx], y.iloc[:split_idx]
+
+        if len(X_train) < 60 or y_train.sum() < 3:
+            return {
+                "crash_probability": None,
+                "risk_level": None,
+                "contributing_factors": [],
+                "vix_current": round(vix_current, 2) if vix_current is not None else None,
+                "vix_available": vix_available,
+                "method": "insufficient_data",
+                "message": "Not enough training data after time-series split.",
+            }
 
         model = GradientBoostingClassifier(
             n_estimators=200,
-            max_depth=4,
-            learning_rate=0.1,
+            max_depth=3,            # reduced depth to lower overfitting
+            learning_rate=0.05,     # slower learning for better generalisation
             subsample=0.8,
+            min_samples_leaf=10,    # prevent memorising small clusters
             random_state=42,
         )
-        model.fit(X.values, y.values)
+        model.fit(X_train.values, y_train.values)
 
         latest = features.dropna().iloc[[-1]]
-        ml_proba = float(model.predict_proba(latest.values)[0, 1])
+        raw_proba = float(model.predict_proba(latest.values)[0, 1])
 
-        # Blend: use heuristic as a floor so we never show 0.0 in bull markets
-        heuristic = _heuristic_fallback(port_returns, vix_current, sentiment_score)
-        heuristic_p = heuristic["crash_probability"]
-        proba = max(ml_proba, heuristic_p * 0.5)  # heuristic floor at 50% weight
+        # Clip to avoid certainty (0.0 or 1.0) from small-sample models
+        proba = float(np.clip(raw_proba, 0.02, 0.95))
 
         imp = sorted(
             zip(features.columns, model.feature_importances_),
@@ -128,17 +170,22 @@ def predict_crash_probability(
             "crash_probability": round(proba, 4),
             "risk_level": _risk_bucket(proba),
             "contributing_factors": factors,
-            "vix_current": round(vix_current, 2),
-            "method": "ml_with_heuristic_floor",
+            "vix_current": round(vix_current, 2) if vix_current is not None else None,
+            "vix_available": vix_available,
+            "method": "ml",
         }
 
     except Exception as exc:
         print(f"[crash_predictor] Error: {exc}", file=sys.stderr)
-        return _heuristic_fallback(
-            returns.dot(np.array(weights)),
-            20.0,
-            sentiment_score,
-        )
+        return {
+            "crash_probability": None,
+            "risk_level": None,
+            "contributing_factors": [],
+            "vix_current": None,
+            "vix_available": False,
+            "method": "error",
+            "error": str(exc),
+        }
 
 
 def _risk_bucket(p: float) -> str:
@@ -149,27 +196,3 @@ def _risk_bucket(p: float) -> str:
     if p >= 0.20:
         return "MODERATE"
     return "LOW"
-
-
-def _heuristic_fallback(
-    port_returns: pd.Series,
-    vix: float,
-    sentiment: float,
-) -> dict:
-    vol = float(port_returns.std() * np.sqrt(252)) if len(port_returns) > 1 else 0.2
-
-    score = 0.0
-    score += min(vol / 0.60, 0.35)               
-    score += min(max(vix - 15, 0) / 50, 0.35)    
-    score += max(-sentiment, 0) * 0.30            
-    score = min(score, 0.95)
-
-    return {
-        "crash_probability": round(score, 4),
-        "risk_level": _risk_bucket(score),
-        "contributing_factors": [
-            {"feature": "heuristic_volatility", "importance": round(vol, 4)},
-            {"feature": "heuristic_vix", "importance": round(vix, 2)},
-        ],
-        "vix_current": round(vix, 2),
-    }

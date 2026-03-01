@@ -115,8 +115,9 @@ export default function Dashboard() {
   const volPct = ((volatility || 0) * 100).toFixed(2)
   // var_95 is now already a loss percentage (e.g. 13.5 = portfolio loses 13.5%)
   const varPct = (var_95 || 0).toFixed(2)
-  const crashPct = ((crashProb || 0) * 100).toFixed(0)
-  const sentimentPct = ((sentiment_score || 0) * 100).toFixed(0)
+  const crashProbNorm = crashProb == null ? null : (Number(crashProb) > 1 ? Number(crashProb) / 100 : Number(crashProb))
+  const crashPct = crashProbNorm == null ? null : (crashProbNorm * 100).toFixed(0)
+  const sentimentPct = results.sentiment_available === false ? null : ((sentiment_score || 0) * 100).toFixed(0)
 
   const regimeColors = { Excitement: 'text-accent-amber', Fear: 'text-accent-red', Neutral: 'text-accent-green' }
 
@@ -153,7 +154,7 @@ export default function Dashboard() {
             <span className={`text-sm font-medium ${regimeColors[regime] || 'text-text-secondary'}`}>
               {regime} Regime
             </span>
-            <span className="text-text-muted text-xs">VIX: {vixCurrent?.toFixed(1)}</span>
+            <span className="text-text-muted text-xs">VIX: {vixCurrent != null ? vixCurrent.toFixed(1) : '—'}</span>
           </div>
         </div>
         <Link to="/app/risk" className="btn-secondary text-sm py-2">
@@ -168,7 +169,7 @@ export default function Dashboard() {
         <MetricCard label="VaR (95%)" value={`-${varPct}%`} sub="Max 30d loss" color="red" />
         <MetricCard label="Sharpe Ratio" value={sharpe_ratio?.toFixed(2) || '—'} sub="Risk-adjusted" color="blue" />
         <MetricCard label="Beta (S&P)" value={portfolio_beta?.toFixed(2) || '—'} sub="Market sensitivity" color="cyan" />
-        <MetricCard label="Crash Prob." value={`${crashPct}%`} sub="Next 30 days" color={parseInt(crashPct) > 40 ? 'red' : 'green'} />
+        <MetricCard label="Crash Prob." value={crashPct != null ? `${crashPct}%` : '—'} sub={crashPct != null ? 'Next 30 days' : 'Unavailable'} color={crashPct != null && parseInt(crashPct) > 40 ? 'red' : 'green'} />
       </motion.div>
 
       {/* 2-column: Vol Forecast + Alerts */}

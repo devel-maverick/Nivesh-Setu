@@ -42,7 +42,7 @@ DEFAULT_THRESHOLDS = {
 def _rule_check(
     metrics: dict,
     sentiment_score: float,
-    vix_current: float,
+    vix_current: Optional[float],
     correlation_matrix,
     thresholds: dict,
 ) -> list:
@@ -134,18 +134,19 @@ def _rule_check(
         ))
 
     t = thresholds["vix_spike"]
-    if vix_current >= t["critical"]:
-        alerts.append(_alert(
-            "VIX_SPIKE", "CRITICAL",
-            f"VIX ({vix_current:.1f}) exceeds critical level ({t['critical']}).",
-            vix_current, t["critical"], now,
-        ))
-    elif vix_current >= t["warning"]:
-        alerts.append(_alert(
-            "VIX_SPIKE", "WARNING",
-            f"VIX ({vix_current:.1f}) is elevated (threshold {t['warning']}).",
-            vix_current, t["warning"], now,
-        ))
+    if vix_current is not None:
+        if vix_current >= t["critical"]:
+            alerts.append(_alert(
+                "VIX_SPIKE", "CRITICAL",
+                f"VIX ({vix_current:.1f}) exceeds critical level ({t['critical']}).",
+                vix_current, t["critical"], now,
+            ))
+        elif vix_current >= t["warning"]:
+            alerts.append(_alert(
+                "VIX_SPIKE", "WARNING",
+                f"VIX ({vix_current:.1f}) is elevated (threshold {t['warning']}).",
+                vix_current, t["warning"], now,
+            ))
 
     t = thresholds["sharpe_degradation"]
     sharpe = metrics.get("sharpe_ratio", 1.0)
@@ -233,7 +234,7 @@ def generate_alerts(
     returns: pd.DataFrame,
     weights: list,
     sentiment_score: float = 0.0,
-    vix_current: float = 20.0,
+    vix_current: Optional[float] = None,
     correlation_matrix=None,
     thresholds: Optional[dict] = None,
 ) -> list:

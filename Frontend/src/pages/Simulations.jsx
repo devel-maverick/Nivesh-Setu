@@ -24,7 +24,7 @@ export default function Simulations() {
 
   if (!results) return <EmptyState />
 
-  const { var_95, expected_return, volatility, scenario_result } = results
+  const { var_95, expected_return, volatility, scenario_result, simulation_data } = results
 
   const runScenario = async () => {
     if (Object.keys(scenarioShock).length === 0) return
@@ -50,34 +50,15 @@ export default function Simulations() {
     { id: 'efficient-frontier', label: 'Efficient Frontier' },
   ]
 
-  // Generate mock Monte Carlo fan data for visualization
-  const paths = 30
+  // Extract backend Monte Carlo simulation paths
   const days = 30
-  const generateFanPaths = () => {
-    const baseVol = volatility || 0.02
-    const baseMu = expected_return || 0.001
-    const result = []
-    for (let p = 0; p < paths; p++) {
-      const path = [100]
-      for (let d = 0; d < days; d++) {
-        const prev = path[path.length - 1]
-        const r = baseMu + baseVol * (Math.random() * 2 - 1) * 2
-        path.push(prev * (1 + r))
-      }
-      result.push(path)
-    }
-    return result
-  }
-  const fanPaths = generateFanPaths()
-
-  // Compute percentiles for fan
-  const p5 = [], p50 = [], p95 = []
-  for (let d = 0; d <= days; d++) {
-    const vals = fanPaths.map(p => p[d]).sort((a, b) => a - b)
-    p5.push(vals[Math.floor(vals.length * 0.05)])
-    p50.push(vals[Math.floor(vals.length * 0.5)])
-    p95.push(vals[Math.floor(vals.length * 0.95)])
-  }
+  
+  // Destructure the arrays provided by the backend APIs
+  const p5 = simulation_data?.monte_carlo_paths?.p5 || []
+  const p50 = simulation_data?.monte_carlo_paths?.p50 || []
+  const p95 = simulation_data?.monte_carlo_paths?.p95 || []
+  
+  const efficient_frontier = simulation_data?.efficient_frontier || []
 
   // SVG Fan chart
   const w = 600, h = 200
@@ -118,7 +99,7 @@ export default function Simulations() {
             <div className="flex items-center gap-2 mb-4">
               <Activity size={18} className="text-zinc-400" />
               <h3 className="font-heading font-semibold text-text-primary">Monte Carlo Simulation Fan</h3>
-              <div className="badge-cyan text-xs ml-auto">{paths} paths · {days} days</div>
+              <div className="badge-cyan text-xs ml-auto">1,000 paths · {days} days</div>
             </div>
             <p className="text-text-muted text-xs mb-4">
               Visualizing the distribution of possible portfolio values over the next {days} trading days based on historical returns.
@@ -244,9 +225,9 @@ export default function Simulations() {
                 scenarioResult.scenario_result >= 0 ? 'text-accent-green' : 'text-accent-red'
               }`}>
                 {scenarioResult.scenario_result >= 0 ? '+' : ''}
-                {(scenarioResult.scenario_result * 100).toFixed(3)}%
+                {(scenarioResult.scenario_result * 100).toFixed(2)}%
               </div>
-              <div className="text-text-muted text-xs mt-1">Expected portfolio daily return under this scenario</div>
+              <div className="text-text-muted text-xs mt-1">Expected annualized portfolio return under this scenario</div>
             </div>
           )}
         </div>
@@ -269,16 +250,23 @@ export default function Simulations() {
               {/* Axis labels */}
               <text x={200} y={197} textAnchor="middle" fill="#6B7280" fontSize={9}>Volatility (Risk)</text>
               <text x={12} y={95} textAnchor="middle" fill="#6B7280" fontSize={9} transform="rotate(-90 12 95)">Return</text>
-              {/* Random frontier points */}
-              {[...Array(40)].map((_, i) => {
-                const vol = 0.08 + Math.random() * 0.22
-                const ret = -0.02 + Math.sqrt(vol) * 0.5 * Math.random() + vol * 0.3
-                const x = 40 + (vol / 0.3) * 360
-                const y = 180 - ((ret + 0.02) / 0.15) * 160
+              {/* Real frontier points */}
+              {efficient_frontier.map((point, i) => {
+                // Determine limits for scaling dynamically based on returned points
+                const maxVol = Math.max(...efficient_frontier.map(p => p.volatility), 0.3)
+                const minVol = Math.min(...efficient_frontier.map(p => p.volatility), 0.02)
+                const maxRet = Math.max(...efficient_frontier.map(p => p.return), 0.15)
+                const minRet = Math.min(...efficient_frontier.map(p => p.return), -0.05)
+                
+                // Map to SVG coordinates
+                const x = 40 + ((point.volatility - minVol) / (maxVol - minVol || 1)) * 340
+                const y = 180 - ((point.return - minRet) / (maxRet - minRet || 1)) * 160
+                
                 return (
                   <circle
                     key={i}
-                    cx={x} cy={Math.max(5, Math.min(175, y))}
+                    cx={Math.max(40, Math.min(390, x))} 
+                    cy={Math.max(5, Math.min(175, y))}
                     r={3}
                     fill="rgba(255,255,255,0.15)"
                     stroke="rgba(255,255,255,0.3)"
@@ -286,14 +274,25 @@ export default function Simulations() {
                   />
                 )
               })}
+              
               {/* Current portfolio dot */}
-              <circle cx={200} cy={100} r={6} fill="#fafafa" stroke="#18181b" strokeWidth={1.5} />
-              <text x={205} y={95} fill="#fafafa" fontSize={9} fontWeight="bold">Your Portfolio</text>
+              {(() => {
+                const maxVol = Math.max(...efficient_frontier.map(p => p.volatility), volatility || 0.3)
+                const minVol = Math.min(...efficient_frontier.map(p => p.volatility), volatility || 0.02)
+                const maxRet = Math.max(...efficient_frontier.map(p => p.return), expected_return || 0.15)
+                const minRet = Math.min(...efficient_frontier.map(p => p.return), expected_return || -0.05)
+                
+                const cur_x = 40 + (((volatility || 0.1) - minVol) / (maxVol - minVol || 1)) * 340
+                const cur_y = 180 - (((expected_return || 0.05) - minRet) / (maxRet - minRet || 1)) * 160
+                
+                return (
+                  <>
+                    <circle cx={Math.max(40, Math.min(390, cur_x))} cy={Math.max(5, Math.min(175, cur_y))} r={6} fill="#fafafa" stroke="#18181b" strokeWidth={1.5} />
+                    <text x={Math.max(40, Math.min(390, cur_x)) + 8} y={Math.max(5, Math.min(175, cur_y)) - 5} fill="#fafafa" fontSize={9} fontWeight="bold">Your Portfolio</text>
+                  </>
+                )
+              })()}
             </svg>
-          </div>
-
-          <div className="badge-cyan mt-4 inline-flex text-xs">
-            Full Markowitz optimization coming with ML backend integration
           </div>
         </div>
       )}

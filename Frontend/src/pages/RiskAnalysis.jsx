@@ -16,6 +16,7 @@ function EmptyState() {
 
 function MetricRow({ label, value, format = 'number', description }) {
   const formatted =
+    value == null ? '—' :
     format === 'pct' ? `${(value * 100).toFixed(2)}%` :
     format === 'ann_pct' ? `${(value * 252 * 100).toFixed(2)}%` :
     typeof value === 'number' ? value.toFixed(4) : String(value)
@@ -175,10 +176,10 @@ export default function RiskAnalysis() {
                 },
                 {
                   label: 'Beta Exposure',
-                  value: portfolio_beta?.toFixed(2),
-                  interpretation: portfolio_beta > 1.3 ? 'High market exposure' : portfolio_beta > 0.8 ? 'Moderate' : 'Defensive',
-                  color: portfolio_beta > 1.3 ? 'text-accent-red' : portfolio_beta > 0.8 ? 'text-accent-amber' : 'text-accent-green',
-                  desc: 'Beta > 1.3 means the portfolio amplifies market swings',
+                  value: portfolio_beta != null ? portfolio_beta.toFixed(2) : '—',
+                  interpretation: portfolio_beta == null ? 'Unavailable' : portfolio_beta > 1.3 ? 'High market exposure' : portfolio_beta > 0.8 ? 'Moderate' : 'Defensive',
+                  color: portfolio_beta == null ? 'text-text-muted' : portfolio_beta > 1.3 ? 'text-accent-red' : portfolio_beta > 0.8 ? 'text-accent-amber' : 'text-accent-green',
+                  desc: portfolio_beta == null ? 'S&P 500 benchmark data unavailable' : 'Beta > 1.3 means the portfolio amplifies market swings',
                 },
                 {
                   label: 'Volatility Level',

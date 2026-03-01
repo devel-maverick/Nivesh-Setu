@@ -9,9 +9,18 @@ const __dirname = dirname(__filename);
 export default function runPython(data) {
   return new Promise((resolve, reject) => {
     const venvPythonPath = join(__dirname, "../../venv/bin/python3");
-    const scriptPath = join(__dirname, "../../LLM/riskengine.py");
+    const defaultScriptPath = join(__dirname, "../../LLM/riskengine.py");
+    const scriptPath = process.env.RISKENGINE_SCRIPT_PATH || defaultScriptPath;
 
-    // Fallback to python3 if venv does not exist on Render or if overriden by env var
+    if (!existsSync(scriptPath)) {
+      return reject(
+        new Error(
+          `Python script not found at ${scriptPath}. On Render, set Root Directory to repo root or set RISKENGINE_SCRIPT_PATH to the full path of LLM/riskengine.py.`
+        )
+      );
+    }
+
+    // Fallback to python3 if venv does not exist on Render or if overridden by env var
     const pythonPath = process.env.PYTHON_PATH || (existsSync(venvPythonPath) ? venvPythonPath : "python3");
 
     const pythonProcess = spawn(pythonPath, [scriptPath]);

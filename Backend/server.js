@@ -5,9 +5,23 @@ import analyzeRoutes from "./routes/analyze.js";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// CORS: allow frontend URL from env so Render/Vercel/other hosts work
+const corsOrigins = [
+  "https://nivesh-setu.vercel.app",
+  "https://nivesh-setu-1.onrender.com",
+  "http://localhost:5174",
+  "http://localhost:3000",
+];
+if (process.env.FRONTEND_URL) {
+  corsOrigins.push(process.env.FRONTEND_URL);
+}
+if (process.env.CORS_ORIGIN) {
+  process.env.CORS_ORIGIN.split(",").forEach((o) => corsOrigins.push(o.trim()));
+}
+
 app.use(express.json());
 app.use(cors({
-  origin: ["https://nivesh-setu.vercel.app", "http://localhost:5173"],
+  origin: corsOrigins,
   credentials: true
 }));
 
