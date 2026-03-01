@@ -2,16 +2,14 @@ from pytrends.request import TrendReq
 import numpy as np
 
 def get_sentiment_score(ticker):
-    pytrend = TrendReq()
-    pytrend.build_payload([ticker], timeframe="today 3-m")
-    data = pytrend.interest_over_time()
+    """Return a sentiment momentum score in [-1, 1] using Google Trends.
 
-    if data.empty:
-        return 0.0
+    Returns 0.0 (neutral) on any error or when no data is available,
+    so Indian / less-searched tickers don't falsely trigger fear alerts.
+    """
+    try:
 
-    values = data[ticker]
-    current = values.iloc[-1]
-    avg = values.mean()
+        search_term = ticker.split(".")[0]
 
     momentum = (current - avg) / avg if avg != 0 else 0
     return float(np.clip(momentum, -1, 1))

@@ -111,7 +111,12 @@ def predict_crash_probability(
         model.fit(X.values, y.values)
 
         latest = features.dropna().iloc[[-1]]
-        proba  = float(model.predict_proba(latest.values)[0, 1])
+        ml_proba = float(model.predict_proba(latest.values)[0, 1])
+
+        # Blend: use heuristic as a floor so we never show 0.0 in bull markets
+        heuristic = _heuristic_fallback(port_returns, vix_current, sentiment_score)
+        heuristic_p = heuristic["crash_probability"]
+        proba = max(ml_proba, heuristic_p * 0.5)  # heuristic floor at 50% weight
 
         imp = sorted(
             zip(features.columns, model.feature_importances_),
@@ -124,6 +129,7 @@ def predict_crash_probability(
             "risk_level": _risk_bucket(proba),
             "contributing_factors": factors,
             "vix_current": round(vix_current, 2),
+            "method": "ml_with_heuristic_floor",
         }
 
     except Exception as exc:

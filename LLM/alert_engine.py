@@ -18,8 +18,8 @@ DEFAULT_THRESHOLDS = {
         "critical": -0.20,  
     },
     "var_breach": {
-        "warning":  -0.02,  
-        "critical": -0.05,  
+        "warning":  0.05,   
+        "critical": 0.10, 
     },
     "correlation_breakdown": {
         "warning":  0.85,   
@@ -33,8 +33,8 @@ DEFAULT_THRESHOLDS = {
         "critical": 35.0,
     },
     "sharpe_degradation": {
-        "warning":  0.3,    
-        "critical": 0.0,    
+        "warning":  0.5,    
+        "critical": 0.0,   
     },
 }
 
@@ -85,18 +85,18 @@ def _rule_check(
 
     var95 = metrics.get("var_95", 0)
     t = thresholds["var_breach"]
-    if var95 <= t["critical"]:
+    if var95 >= t["critical"]:
         alerts.append(_alert(
             "VAR_BREACH", "CRITICAL",
-            f"95 % VaR ({var95:.2%}) worse than critical threshold "
-            f"({t['critical']:.0%}).",
+            f"30-day VaR ({var95:.1%} potential loss) exceeds critical "
+            f"threshold ({t['critical']:.0%}).",
             var95, t["critical"], now,
         ))
-    elif var95 <= t["warning"]:
+    elif var95 >= t["warning"]:
         alerts.append(_alert(
             "VAR_BREACH", "WARNING",
-            f"95 % VaR ({var95:.2%}) worse than warning threshold "
-            f"({t['warning']:.0%}).",
+            f"30-day VaR ({var95:.1%} potential loss) exceeds warning "
+            f"threshold ({t['warning']:.0%}).",
             var95, t["warning"], now,
         ))
 
