@@ -21,8 +21,9 @@ export default function runPython(data) {
     });
 
     let output = "";
+    let errorOutput = "";
 
-    pythonProcess.stdin.write(JSON.stringify(data));
+    pythonProcess.stdin.write(JSON.stringify(data || {}));
     pythonProcess.stdin.end();
 
     pythonProcess.stdout.on("data", (chunk) => {
@@ -30,12 +31,14 @@ export default function runPython(data) {
     });
 
     pythonProcess.stderr.on("data", (chunk) => {
-      console.warn("PYTHON STDERR:", chunk.toString()); 
+      const errStr = chunk.toString();
+      errorOutput += errStr;
+      console.warn("PYTHON STDERR:", errStr); 
     });
 
     pythonProcess.on("close", (code) => {
       if (code !== 0) {
-        return reject(`Python process exited with code ${code}`);
+        return reject(`Python process exited with code ${code}. Stderr: ${errorOutput}`);
       }
       try {
         const parsed = JSON.parse(output);
