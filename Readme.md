@@ -362,11 +362,11 @@ erDiagram
 
 **Test 1 — Multi-ticker portfolio with timeframe (`AAPL` + `TSLA`, weights 0.6 / 0.4, `1Y`)**
 
-![API Test 1 - Multi ticker](./screenshot1.png)
+![API Test 1 - Multi ticker](./screenshots/api1.jpeg)
 
 **Test 2 — Single ticker with custom date range (`AAPL`, weight 1.0, `2023-01-01` → `2024-01-01`)**
 
-![API Test 2 - Date range](./screenshot2.png)
+![API Test 2 - Date range](./screenshots/api2.jpeg)
 
 > Both requests return `200 OK` with full risk metrics including `expected_return`, `volatility`, `sharpe_ratio`, `correlation_matrix`, `portfolio_beta`, `individual_betas`, `var_95`, `cvar_95`, `max_drawdown`, `scenario_result`, `monte_carlo_paths`, `efficient_frontier`, `volatility_forecast`, `crash_probability`, and `alerts`.
 
@@ -374,13 +374,13 @@ erDiagram
 
 ## 10. Module-wise Development & Deliverables
 
-### Checkpoint 1: Research & Planning
+### 1. Research & Planning
 **Deliverables:**
 - [x] Risk model selection
 - [x] Mathematical validation of formulas
 - [x] Architecture diagram
 
-### Checkpoint 2: Backend Development
+### 2. Backend Development
 **Deliverables:**
 - [x] Node.js + Express API server with Python subprocess bridge
 - [x] Data fetching engine (yfinance)
@@ -395,7 +395,7 @@ erDiagram
 - [x] Correlation matrix
 - [x] Scenario analysis
 
-### Checkpoint 3: Frontend Development
+### 3. Frontend Development
 **Deliverables:**
 - [x] React + Vite + Tailwind CSS setup
 - [x] Clerk authentication (login / signup pages)
@@ -404,7 +404,7 @@ erDiagram
 - [x] Portfolio input UI
 - [x] Dashboard page with metric cards
 
-### Checkpoint 4: Model Training
+### 4. Model Training
 **Deliverables:**
 - [x] Monte Carlo simulation engine
 - [x] Markowitz / Efficient Frontier optimization
@@ -412,14 +412,14 @@ erDiagram
 - [x] GradientBoosting crash predictor
 - [x] Smart alert engine
 
-### Checkpoint 5: Model Integration
+### 5. Model Integration
 **Deliverables:**
 - [x] `/api/analyze` endpoint live and tested
 - [x] Monte Carlo results in API response
 - [x] ML forecast (volatility + crash probability) in response
 - [x] Alert engine integrated
 
-### Checkpoint 6: Deployment
+### 6. Deployment
 **Deliverables:**
 - [x] Local development setup
 - [x] Vercel deployment (frontend)
