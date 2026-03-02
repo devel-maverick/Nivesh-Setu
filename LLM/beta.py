@@ -11,9 +11,9 @@ def calculate_stock_beta(stock_returns, market_returns):
     if len(stock_r) < 2 or len(market_r) < 2:
         return 0.0
 
-    covariance_matrix = np.cov(stock_r, market_r)        # uses ddof=1 (sample)
+    covariance_matrix = np.cov(stock_r, market_r)        
     covariance = covariance_matrix[0, 1]
-    market_variance = np.var(market_r, ddof=1)             # must match np.cov's ddof=1
+    market_variance = np.var(market_r, ddof=1)             
 
     if market_variance == 0:
         return 0.0
@@ -29,7 +29,6 @@ def calculate_portfolio_beta(returns, weights, start, end):
         if "Close" in raw.columns:
             market_data = raw["Close"].squeeze()
         elif isinstance(raw.columns, pd.MultiIndex):
-            # newer yfinance may return MultiIndex even for single ticker
             if "Close" in raw.columns.get_level_values(0):
                 market_data = raw["Close"].squeeze()
             else:

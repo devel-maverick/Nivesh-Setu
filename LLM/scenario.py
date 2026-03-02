@@ -2,13 +2,6 @@ import numpy as np
 
 
 def apply_scenario(returns, weights, shock_dict):
-    """Apply a market shock to returns.
-
-    Args:
-        shock_dict: Either a dict mapping ticker -> shock percentage (e.g. {"AAPL": -0.20}),
-                    or a plain float/int representing a uniform shock across all tickers
-                    (e.g. -0.20 means every ticker drops 20 %).
-    """
     modified_returns = returns.copy()
 
 
@@ -20,6 +13,6 @@ def apply_scenario(returns, weights, shock_dict):
             modified_returns[ticker] += shock
 
     portfolio_return_daily = np.dot(modified_returns.mean(), weights)
-    portfolio_return_annual = portfolio_return_daily * 252  # annualise for consistency
+    portfolio_return_annual = portfolio_return_daily * 252  
 
     return float(portfolio_return_annual)

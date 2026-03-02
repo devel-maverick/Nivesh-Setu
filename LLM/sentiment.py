@@ -7,12 +7,6 @@ RETRY_DELAY_SEC = 2
 
 
 def get_sentiment_score(ticker):
-    """Return sentiment momentum score in [-1, 1] using Google Trends.
-
-    Returns dict: {"score": float, "available": bool}.
-    When data is unavailable (error, rate limit, empty), returns
-    {"score": 0.0, "available": False} so callers can show "Unavailable" instead of fake neutral.
-    """
     for attempt in range(MAX_RETRIES):
         try:
             search_term = ticker.split(".")[0]

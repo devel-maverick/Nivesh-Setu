@@ -146,10 +146,10 @@ def predict_crash_probability(
 
         model = GradientBoostingClassifier(
             n_estimators=200,
-            max_depth=3,            # reduced depth to lower overfitting
-            learning_rate=0.05,     # slower learning for better generalisation
+            max_depth=3,            
+            learning_rate=0.05,     
             subsample=0.8,
-            min_samples_leaf=10,    # prevent memorising small clusters
+            min_samples_leaf=10,    
             random_state=42,
         )
         model.fit(X_train.values, y_train.values)
@@ -157,7 +157,6 @@ def predict_crash_probability(
         latest = features.dropna().iloc[[-1]]
         raw_proba = float(model.predict_proba(latest.values)[0, 1])
 
-        # Clip to avoid certainty (0.0 or 1.0) from small-sample models
         proba = float(np.clip(raw_proba, 0.02, 0.95))
 
         imp = sorted(

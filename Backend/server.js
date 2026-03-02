@@ -5,7 +5,6 @@ import analyzeRoutes from "./routes/analyze.js";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS: allow frontend URL from env so Render/Vercel/other hosts work
 const corsOrigins = [
   "https://nivesh-setu.vercel.app",
   "https://nivesh-setu-1.onrender.com",
@@ -25,7 +24,6 @@ app.use(cors({
   credentials: true
 }));
 
-// Health check endpoint for Render
 app.get("/", (req, res) => {
   res.status(200).json({ status: "ok", message: "Nivesh-Setu API is running" });
 });
